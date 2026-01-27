@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
+
+	"github.com/codecrafters-io/dns-server-starter-go/app/domains"
 )
 
 // Ensures gofmt doesn't remove the "net" import in stage 1 (feel free to remove this!)
@@ -37,8 +39,8 @@ func main() {
 		receivedData := string(buf[:size])
 		fmt.Printf("Received %d bytes from %s: %s\n", size, source, receivedData)
 
-		// Create an empty response
-		response := []byte{}
+		msg := domains.EmptyDnsMessage()
+		response := msg.Encode()
 
 		_, err = udpConn.WriteToUDP(response, source)
 		if err != nil {
