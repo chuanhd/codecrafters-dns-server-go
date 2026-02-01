@@ -39,7 +39,7 @@ func main() {
 		receivedData := string(buf[:size])
 		fmt.Printf("Received %d bytes from %s: %s\n", size, source, receivedData)
 
-		msg := domains.EmptyDnsMessage()
+		msg := domains.CodeCraftersDnsMessage()
 		response := msg.Encode()
 
 		_, err = udpConn.WriteToUDP(response, source)
