@@ -3,9 +3,9 @@ package domains
 import "bytes"
 
 type DnsMessage struct {
-	header   DnsHeader
-	question DnsQuestion
-	answer   DnsAnswer
+	Header   DnsHeader
+	Question DnsQuestion
+	Answer   DnsAnswer
 }
 
 func CodeCraftersDnsMessage() DnsMessage {
@@ -21,33 +21,67 @@ func CodeCraftersDnsMessage() DnsMessage {
 	header.SetQR(true)
 
 	question := DnsQuestion{
-		qname:  "codecrafters.io",
-		qtype:  1,
-		qclass: 1,
+		Qname:  "codecrafters.io",
+		Qtype:  1,
+		Qclass: 1,
 	}
 
 	answer := DnsAnswer{
-		name:     "codecrafters.io",
-		atype:    1,
-		class:    1,
-		ttl:      60,
-		rdlength: 4,
-		rdata:    "8.8.8.8",
+		Name:     "codecrafters.io",
+		Type:     1,
+		Class:    1,
+		TTL:      60,
+		RDlength: 4,
+		Rdata:    "8.8.8.8",
 	}
 
 	return DnsMessage{
-		header:   header,
-		question: question,
-		answer:   answer,
+		Header:   header,
+		Question: question,
+		Answer:   answer,
 	}
 }
 
 func (m *DnsMessage) Encode() []byte {
 	var outputBuff bytes.Buffer
 
-	outputBuff.Write(m.header.Encode())
-	outputBuff.Write(m.question.Encode())
-	outputBuff.Write(m.answer.Encode())
+	outputBuff.Write(m.Header.Encode())
+	outputBuff.Write(m.Question.Encode())
+	outputBuff.Write(m.Answer.Encode())
 
 	return outputBuff.Bytes()
+}
+
+func DecodeMessage(data []byte) (DnsMessage, error) {
+	headerInBytes := data[:12]
+
+	header, err := DecodeHeader(headerInBytes)
+
+	if err != nil {
+		return DnsMessage{}, err
+	}
+
+	header.SetQR(true)
+	header.ANCount = 1
+
+	question := DnsQuestion{
+		Qname:  "codecrafters.io",
+		Qtype:  1,
+		Qclass: 1,
+	}
+
+	answer := DnsAnswer{
+		Name:     "codecrafters.io",
+		Type:     1,
+		Class:    1,
+		TTL:      60,
+		RDlength: 4,
+		Rdata:    "8.8.8.8",
+	}
+
+	return DnsMessage{
+		Header:   header,
+		Question: question,
+		Answer:   answer,
+	}, nil
 }

@@ -39,10 +39,44 @@ func main() {
 		receivedData := string(buf[:size])
 		fmt.Printf("Received %d bytes from %s: %s\n", size, source, receivedData)
 
-		msg := domains.CodeCraftersDnsMessage()
-		response := msg.Encode()
+		reqMsg, err := domains.DecodeMessage(buf[:size])
+		if err != nil {
+			fmt.Println("Error decoding message: ", err)
+			continue
+		}
 
-		_, err = udpConn.WriteToUDP(response, source)
+		respHeader := domains.DnsHeader{
+			ID:      reqMsg.Header.ID,
+			Flags:   0,
+			QDCount: 1,
+			ANCount: 1,
+			NSCount: 0,
+			ARCount: 0,
+		}
+		respHeader.SetResponseFlags(reqMsg.Header.Flags)
+
+		question := domains.DnsQuestion{
+			Qname:  "codecrafters.io",
+			Qtype:  1,
+			Qclass: 1,
+		}
+
+		answer := domains.DnsAnswer{
+			Name:     "codecrafters.io",
+			Type:     1,
+			Class:    1,
+			TTL:      60,
+			RDlength: 4,
+			Rdata:    "8.8.8.8",
+		}
+
+		respMsg := domains.DnsMessage{
+			Header:   respHeader,
+			Question: question,
+			Answer:   answer,
+		}
+
+		_, err = udpConn.WriteToUDP(respMsg.Encode(), source)
 		if err != nil {
 			fmt.Println("Failed to send response:", err)
 		}

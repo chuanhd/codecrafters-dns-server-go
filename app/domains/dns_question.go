@@ -7,16 +7,16 @@ import (
 )
 
 type DnsQuestion struct {
-	qname  string
-	qtype  uint16
-	qclass uint16
+	Qname  string
+	Qtype  uint16
+	Qclass uint16
 }
 
 func (q *DnsQuestion) Encode() []byte {
 	var buf bytes.Buffer
 
 	// Split qname by '.'
-	names := strings.SplitSeq(q.qname, ".")
+	names := strings.SplitSeq(q.Qname, ".")
 
 	for name := range names {
 		buf.WriteByte(byte(len(name)))
@@ -27,12 +27,12 @@ func (q *DnsQuestion) Encode() []byte {
 	qTypeByteSlice := make([]byte, 2)
 	binary.BigEndian.PutUint16(
 		qTypeByteSlice,
-		q.qtype,
+		q.Qtype,
 	)
 	buf.Write(qTypeByteSlice)
 
 	qClassByteSlice := make([]byte, 2)
-	binary.BigEndian.PutUint16(qClassByteSlice, q.qclass)
+	binary.BigEndian.PutUint16(qClassByteSlice, q.Qclass)
 	buf.Write(qClassByteSlice)
 
 	return buf.Bytes()
