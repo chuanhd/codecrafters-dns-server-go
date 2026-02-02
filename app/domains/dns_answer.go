@@ -9,12 +9,11 @@ import (
 )
 
 type DnsAnswer struct {
-	Name     string
-	Type     uint16
-	Class    uint16
-	TTL      uint32
-	RDlength uint16
-	Rdata    string
+	Name  string
+	Type  uint16
+	Class uint16
+	TTL   uint32
+	Rdata string
 }
 
 func encodeRData(ipStr string) ([4]byte, error) {
@@ -58,11 +57,12 @@ func (q *DnsAnswer) Encode() []byte {
 	binary.BigEndian.PutUint32(ttlByteSlice, q.TTL)
 	buf.Write(ttlByteSlice)
 
+	rDataInByte, _ := encodeRData(q.Rdata)
+
 	rlengthByteSlice := make([]byte, 2)
-	binary.BigEndian.PutUint16(rlengthByteSlice, q.RDlength)
+	binary.BigEndian.PutUint16(rlengthByteSlice, uint16(len(rDataInByte)))
 	buf.Write(rlengthByteSlice)
 
-	rDataInByte, _ := encodeRData(q.Rdata)
 	buf.Write(rDataInByte[:])
 
 	return buf.Bytes()

@@ -1,53 +1,25 @@
 package domains
 
-import "bytes"
+import (
+	"bytes"
+)
 
 type DnsMessage struct {
 	Header   DnsHeader
-	Question DnsQuestion
-	Answer   DnsAnswer
-}
-
-func CodeCraftersDnsMessage() DnsMessage {
-	header := DnsHeader{
-		ID:      1234,
-		Flags:   0,
-		QDCount: 1,
-		ANCount: 1,
-		NSCount: 0,
-		ARCount: 0,
-	}
-
-	header.SetQR(true)
-
-	question := DnsQuestion{
-		Qname:  "codecrafters.io",
-		Qtype:  1,
-		Qclass: 1,
-	}
-
-	answer := DnsAnswer{
-		Name:     "codecrafters.io",
-		Type:     1,
-		Class:    1,
-		TTL:      60,
-		RDlength: 4,
-		Rdata:    "8.8.8.8",
-	}
-
-	return DnsMessage{
-		Header:   header,
-		Question: question,
-		Answer:   answer,
-	}
+	Question []DnsQuestion
+	Answer   []DnsAnswer
 }
 
 func (m *DnsMessage) Encode() []byte {
 	var outputBuff bytes.Buffer
 
 	outputBuff.Write(m.Header.Encode())
-	outputBuff.Write(m.Question.Encode())
-	outputBuff.Write(m.Answer.Encode())
+	for _, question := range m.Question {
+		outputBuff.Write(question.Encode())
+	}
+	for _, answer := range m.Answer {
+		outputBuff.Write(answer.Encode())
+	}
 
 	return outputBuff.Bytes()
 }
@@ -63,24 +35,22 @@ func DecodeMessage(data []byte) (DnsMessage, error) {
 		return DnsMessage{}, err
 	}
 
-	question, _, err := DecodeQuestion(data, headerLength)
+	offset := headerLength
+	questions := make([]DnsQuestion, 0)
+	for i := 0; i < int(header.QDCount); i++ {
+		question, next, err := DecodeQuestion(data, offset)
+		offset = next
 
-	if err != nil {
-		return DnsMessage{}, err
-	}
+		if err != nil {
+			continue
+		}
 
-	answer := DnsAnswer{
-		Name:     "codecrafters.io",
-		Type:     1,
-		Class:    1,
-		TTL:      60,
-		RDlength: 4,
-		Rdata:    "8.8.8.8",
+		questions = append(questions, question)
 	}
 
 	return DnsMessage{
 		Header:   header,
-		Question: question,
-		Answer:   answer,
+		Question: questions,
+		Answer:   []DnsAnswer{},
 	}, nil
 }

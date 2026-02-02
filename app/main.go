@@ -7,12 +7,7 @@ import (
 	"github.com/codecrafters-io/dns-server-starter-go/app/domains"
 )
 
-// Ensures gofmt doesn't remove the "net" import in stage 1 (feel free to remove this!)
-var _ = net.ListenUDP
-
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Println("Logs from your program will appear here!")
 
 	udpAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:2053")
 	if err != nil {
@@ -48,32 +43,37 @@ func main() {
 		respHeader := domains.DnsHeader{
 			ID:      reqMsg.Header.ID,
 			Flags:   0,
-			QDCount: 1,
-			ANCount: 1,
+			QDCount: reqMsg.Header.QDCount,
+			ANCount: reqMsg.Header.QDCount,
 			NSCount: 0,
 			ARCount: 0,
 		}
 		respHeader.SetResponseFlags(reqMsg.Header.Flags)
 
-		question := domains.DnsQuestion{
-			Qname:  reqMsg.Question.Qname,
-			Qtype:  1,
-			Qclass: 1,
-		}
+		questions := make([]domains.DnsQuestion, int(reqMsg.Header.QDCount))
+		answers := make([]domains.DnsAnswer, int(reqMsg.Header.QDCount))
 
-		answer := domains.DnsAnswer{
-			Name:     reqMsg.Question.Qname,
-			Type:     1,
-			Class:    1,
-			TTL:      60,
-			RDlength: 4,
-			Rdata:    "8.8.8.8",
+		for i := range questions {
+			fmt.Printf("Question %d: %s\n", i+1, reqMsg.Question[i].Qname)
+			questions[i] = domains.DnsQuestion{
+				Qname:  reqMsg.Question[i].Qname,
+				Qtype:  1,
+				Qclass: 1,
+			}
+
+			answers[i] = domains.DnsAnswer{
+				Name:  reqMsg.Question[i].Qname,
+				Type:  1,
+				Class: 1,
+				TTL:   60,
+				Rdata: "8.8.8.8",
+			}
 		}
 
 		respMsg := domains.DnsMessage{
 			Header:   respHeader,
-			Question: question,
-			Answer:   answer,
+			Question: questions,
+			Answer:   answers,
 		}
 
 		_, err = udpConn.WriteToUDP(respMsg.Encode(), source)
