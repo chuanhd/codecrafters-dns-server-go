@@ -56,13 +56,13 @@ func main() {
 		respHeader.SetResponseFlags(reqMsg.Header.Flags)
 
 		question := domains.DnsQuestion{
-			Qname:  "codecrafters.io",
+			Qname:  reqMsg.Question.Qname,
 			Qtype:  1,
 			Qclass: 1,
 		}
 
 		answer := domains.DnsAnswer{
-			Name:     "codecrafters.io",
+			Name:     reqMsg.Question.Qname,
 			Type:     1,
 			Class:    1,
 			TTL:      60,

@@ -53,7 +53,9 @@ func (m *DnsMessage) Encode() []byte {
 }
 
 func DecodeMessage(data []byte) (DnsMessage, error) {
-	headerInBytes := data[:12]
+	const headerLength = 12
+
+	headerInBytes := data[:headerLength]
 
 	header, err := DecodeHeader(headerInBytes)
 
@@ -61,13 +63,10 @@ func DecodeMessage(data []byte) (DnsMessage, error) {
 		return DnsMessage{}, err
 	}
 
-	header.SetQR(true)
-	header.ANCount = 1
+	question, _, err := DecodeQuestion(data, headerLength)
 
-	question := DnsQuestion{
-		Qname:  "codecrafters.io",
-		Qtype:  1,
-		Qclass: 1,
+	if err != nil {
+		return DnsMessage{}, err
 	}
 
 	answer := DnsAnswer{
