@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/codecrafters-io/dns-server-starter-go/app/utils"
 )
 
 type DnsAnswer struct {
@@ -13,7 +15,7 @@ type DnsAnswer struct {
 	Type  uint16
 	Class uint16
 	TTL   uint32
-	Rdata string
+	Rdata []byte
 }
 
 func encodeRData(ipStr string) ([4]byte, error) {
@@ -57,13 +59,41 @@ func (q *DnsAnswer) Encode() []byte {
 	binary.BigEndian.PutUint32(ttlByteSlice, q.TTL)
 	buf.Write(ttlByteSlice)
 
-	rDataInByte, _ := encodeRData(q.Rdata)
+	rData := make([]byte, 4)
+	copy(rData[:], q.Rdata)
 
 	rlengthByteSlice := make([]byte, 2)
-	binary.BigEndian.PutUint16(rlengthByteSlice, uint16(len(rDataInByte)))
+	binary.BigEndian.PutUint16(rlengthByteSlice, uint16(len(rData)))
 	buf.Write(rlengthByteSlice)
 
-	buf.Write(rDataInByte[:])
+	buf.Write(rData[:])
 
 	return buf.Bytes()
+}
+
+func DecodeAnswer(data []byte, offset int) (DnsAnswer, int, error) {
+	name, curOffset, err := utils.DecodeName(data, offset)
+	if err != nil {
+		return DnsAnswer{}, offset, err
+	}
+
+	type_ := binary.BigEndian.Uint16(data[curOffset : curOffset+2])
+	class := binary.BigEndian.Uint16(data[curOffset+2 : curOffset+4])
+	ttl := binary.BigEndian.Uint32(data[curOffset+4 : curOffset+8])
+	rlength := binary.BigEndian.Uint16(data[curOffset+8 : curOffset+10])
+
+	curOffset = curOffset + 10
+
+	rdata := make([]byte, int(rlength))
+	copy(rdata, data[curOffset:curOffset+int(rlength)])
+
+	curOffset += int(rlength)
+
+	return DnsAnswer{
+		Name:  name,
+		Type:  type_,
+		Class: class,
+		TTL:   ttl,
+		Rdata: rdata,
+	}, curOffset, nil
 }

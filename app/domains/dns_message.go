@@ -48,9 +48,19 @@ func DecodeMessage(data []byte) (DnsMessage, error) {
 		questions = append(questions, question)
 	}
 
+	answers := make([]DnsAnswer, 0, int(header.ANCount))
+	for i := 0; i < int(header.ANCount); i++ {
+		a, next, err := DecodeAnswer(data, offset)
+		if err != nil {
+			return DnsMessage{}, err
+		}
+		answers = append(answers, a)
+		offset = next
+	}
+
 	return DnsMessage{
 		Header:   header,
 		Question: questions,
-		Answer:   []DnsAnswer{},
+		Answer:   answers,
 	}, nil
 }
